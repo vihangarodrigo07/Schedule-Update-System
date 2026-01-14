@@ -1,0 +1,36 @@
+# Frontend
+frontend/node_modules/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnp/
+frontend/.pnp.js
+frontend/coverage/
+frontend/.DS_Store
+frontend/.env
+
+# Backend
+backend/__pycache__/
+backend/*.pyc
+backend/.venv/
+backend/venv/
+backend/env/
+backend/.env
+backend/.env.local
+backend/.env.development.local
+backend/.env.test.local
+backend/.env.production.local
+backend/instance/
+backend/.webassets-cache
+backend/.coverage
+backend/htmlcov/
+backend/dist/
+backend/build/
+
+# General
+.DS_Store
+*.log
