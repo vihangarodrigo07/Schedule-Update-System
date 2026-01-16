@@ -5,6 +5,7 @@ import LoginPage from './components/LoginPage';
 import ProfilePage from './components/ProfilePage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { isAuthenticated } from './utils/auth';
+import ResetPasswordPage from './components/ResetPasswordPage';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
               <Navigate to={isAuthenticated() ? "/profile" : "/login"} replace />
             } 
           />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Routes>
       </Router>
       <Toaster 

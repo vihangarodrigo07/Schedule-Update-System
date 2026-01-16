@@ -4,6 +4,8 @@ import { LogIn, Mail, Lock, University } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { authAPI } from '../services/api';
 import { saveUserData } from '../utils/auth';
+import { supabase } from '../supabaseClient';
+
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -53,6 +55,31 @@ const LoginPage = () => {
       setLoading(false);
     }
   };
+
+  const handleForgotPassword = async () => {
+    // Check if email is entered
+    if (!formData.email) {
+      toast.error('Please enter your email first');
+      return;
+    }
+
+    // Send password reset email via Supabase
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      formData.email,
+      {
+        // User will be redirected here after clicking email link
+        redirectTo: 'http://localhost:3000/reset-password',
+      }
+    );
+
+    // Handle response
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success('Password reset email sent!');
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-primary-50 flex items-center justify-center p-4">
@@ -139,6 +166,17 @@ const LoginPage = () => {
                 required
                 disabled={loading}
               />
+            </div>
+
+            {/* Forgot Password */}
+            <div className="mb-6 text-right">
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-sm text-primary-600 hover:underline"
+              >
+                Forgot password?
+              </button>
             </div>
 
             {/* Submit Button */}
