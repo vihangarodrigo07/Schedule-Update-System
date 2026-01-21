@@ -28,7 +28,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized access
       if (window.location.pathname !== '/login') {
         localStorage.removeItem('token');
         localStorage.removeItem('user_id');
@@ -40,7 +39,11 @@ api.interceptors.response.use(
   }
 );
 
+// =======================
+// AUTH API
+// =======================
 export const authAPI = {
+  // ✅ EXISTING LOGIN (UNCHANGED)
   login: async (email, password) => {
     try {
       const response = await api.post('/login', { email, password });
@@ -52,8 +55,29 @@ export const authAPI = {
       throw error;
     }
   },
+
+  // ✅ NEW REGISTER (ADDED ONLY)
+  register: async (first_name, last_name, email, password) => {
+    try {
+      const response = await api.post('/register', {
+        first_name,
+        last_name,
+        email,
+        password,
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 409) {
+        throw new Error('Email already registered');
+      }
+      throw error;
+    }
+  },
 };
 
+// =======================
+// PROFILE API (UNCHANGED)
+// =======================
 export const profileAPI = {
   getProfile: async (userId) => {
     const response = await api.get(`/profile/${userId}`);

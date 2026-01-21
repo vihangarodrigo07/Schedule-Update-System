@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import LoginPage from './components/LoginPage';
+import RegisterPage from "./components/Registerpage";
 import ProfilePage from './components/ProfilePage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { isAuthenticated } from './utils/auth';
@@ -25,6 +26,7 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          <Route path="/register" element={<RegisterPage />} />
           <Route 
             path="/" 
             element={
