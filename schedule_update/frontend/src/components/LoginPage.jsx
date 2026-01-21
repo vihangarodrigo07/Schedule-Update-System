@@ -208,6 +208,20 @@ const LoginPage = () => {
               Demo: Use your university credentials or contact IT support
             </p>
           </div>
+          {/* Register Link */}
+<div className="mt-4">
+  <p className="text-sm text-gray-600 text-center">
+    Don’t have an account?{" "}
+    <button
+      type="button"
+      onClick={() => navigate("/register")}
+      className="text-primary-600 font-semibold hover:underline"
+    >
+      Register
+    </button>
+  </p>
+</div>
+
         </div>
       </div>
     </div>
