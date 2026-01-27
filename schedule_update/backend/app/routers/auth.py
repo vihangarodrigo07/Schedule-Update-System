@@ -14,7 +14,6 @@ async def register(request: RegisterRequest):
             "password": request.password,
         })
     except Exception as e:
-        print(f"❌ SUPABASE ERROR: {str(e)}")
         # Catch errors like "User already registered"
         raise HTTPException(status_code=400, detail=str(e))
 
