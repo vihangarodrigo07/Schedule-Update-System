@@ -1,14 +1,14 @@
 import React from 'react';
-import { 
-  User, 
-  BookOpen, 
-  Calendar, 
-  Settings, 
+import {
+  User,
+  BookOpen,
+  Calendar,
+  Settings,
   LogOut,
   Home,
   Bell
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 import { clearUserData, getCurrentUserName } from '../utils/auth';
 import { toast } from 'react-hot-toast';
 
@@ -17,12 +17,12 @@ const Sidebar = () => {
   const userName = getCurrentUserName();
 
   const menuItems = [
-    { icon: <Home className="h-5 w-5" />, label: 'Dashboard', active: false },
-    { icon: <User className="h-5 w-5" />, label: 'Profile', active: true },
-    { icon: <BookOpen className="h-5 w-5" />, label: 'Courses', active: false },
-    { icon: <Calendar className="h-5 w-5" />, label: 'Schedule', active: false },
-    { icon: <Bell className="h-5 w-5" />, label: 'Notifications', active: false },
-    { icon: <Settings className="h-5 w-5" />, label: 'Settings', active: false },
+    { icon: <Home className="h-5 w-5" />, label: 'Dashboard', path: '/dashboard' },
+    { icon: <User className="h-5 w-5" />, label: 'Profile', path: '/profile' },
+    { icon: <BookOpen className="h-5 w-5" />, label: 'Courses', path: '/courses' },
+    { icon: <Calendar className="h-5 w-5" />, label: 'Schedule', path: '/calendar' },
+    { icon: <Bell className="h-5 w-5" />, label: 'Notifications', path: '/notifications' },
+    { icon: <Settings className="h-5 w-5" />, label: 'Settings', path: '/settings' },
   ];
 
   const handleLogout = () => {
@@ -33,6 +33,7 @@ const Sidebar = () => {
 
   return (
     <div className="h-screen w-64 bg-gradient-to-b from-university-blue to-blue-900 text-white flex flex-col">
+
       {/* Logo */}
       <div className="p-6 border-b border-blue-700">
         <h1 className="text-xl font-bold flex items-center">
@@ -60,16 +61,19 @@ const Sidebar = () => {
         <ul className="space-y-2">
           {menuItems.map((item, index) => (
             <li key={index}>
-              <button
-                className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
-                  item.active
-                    ? 'bg-blue-700 text-white'
-                    : 'text-blue-100 hover:bg-blue-800'
-                }`}
+              <NavLink
+                to={item.path}
+                className={({ isActive }) =>
+                  `w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-blue-700 text-white'
+                      : 'text-blue-100 hover:bg-blue-800'
+                  }`
+                }
               >
                 <span className="mr-3">{item.icon}</span>
                 {item.label}
-              </button>
+              </NavLink>
             </li>
           ))}
         </ul>
@@ -85,6 +89,7 @@ const Sidebar = () => {
           Logout
         </button>
       </div>
+
     </div>
   );
 };
