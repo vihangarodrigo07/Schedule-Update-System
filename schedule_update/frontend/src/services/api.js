@@ -85,4 +85,29 @@ export const profileAPI = {
   },
 };
 
+// =======================
+// LECTURE API (ADD THIS NEW SECTION)
+// =======================
+export const lectureAPI = {
+  // Get all lectures for a lecturer
+  getLectures: async (lecturerId) => {
+    const response = await api.get(`/lectures/lecturer/${lecturerId}`);
+    return response.data;
+  },
+
+  // Cancel a lecture
+  cancelLecture: async (lectureId, reason) => {
+    const response = await api.post('/lectures/cancel', {
+      lecture_id: lectureId,
+      reason: reason
+    });
+    return response.data;
+  },
+
+  // Get cancellation status
+  getCancellationStatus: async (lectureId) => {
+    const response = await api.get(`/lectures/${lectureId}/cancellation-status`);
+    return response.data;
+  }
+};
 export default api;

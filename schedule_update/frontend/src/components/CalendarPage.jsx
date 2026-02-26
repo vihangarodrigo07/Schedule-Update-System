@@ -1,5 +1,9 @@
-import { useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { CalendarDays, ChevronLeft, ChevronRight, X, AlertCircle } from "lucide-react";
+import { toast } from 'react-hot-toast';
+import { lectureAPI } from '../services/api';
+import CancelLectureModal from './CancelLectureModal';
+import { getCurrentUserId } from '../utils/auth';
 
 // Single Calendar Component
 function Calendar({ calendar, currentDate, onSelectDate, selectedDate, showEvents = true }) {
@@ -28,7 +32,10 @@ function Calendar({ calendar, currentDate, onSelectDate, selectedDate, showEvent
         {days.map((day, index) => (
           <div
             key={index}
-            onClick={() => day && onSelectDate(day)}
+            onClick={() => {
+            const event = calendar.events[day]?.[0]; // Get first event of the day
+            onSelectDate(day, event);
+            }}
             className="h-20 border cursor-pointer relative hover:bg-gray-50 p-1"
           >
             {day && (
@@ -98,18 +105,94 @@ export default function MyCalendars() {
   const [selectedDates, setSelectedDates] = useState({});
   const [focusedCalendar, setFocusedCalendar] = useState(null); // null = show all
   const [showModal, setShowModal] = useState(false);
+  const [lectures, setLectures] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedLecture, setSelectedLecture] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const userId = getCurrentUserId();
 
   const prevMonth = () =>
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
   const nextMonth = () =>
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
 
-  const handleSelectDate = (calendarKey, day) => {
-    setSelectedDates((prev) => ({
+  const handleSelectDate = (calendarKey, day, event = null) => {
+  setSelectedDates((prev) => ({
       ...prev,
       [calendarKey]: { day, events: calendars[calendarKey].events[day] || [] },
     }));
+    
+    // If it's a lecture and an event exists, handle lecture click
+    if (calendarKey === 'lecture' && event) {
+      handleLectureClick(calendarKey, day, event);
+    }
   };
+
+  // Fetch lectures from API
+    useEffect(() => {
+      fetchLectures();
+    }, []);
+
+  const fetchLectures = async () => {
+      if (!userId) return;
+      
+      try {
+        setLoading(true);
+        const data = await lectureAPI.getLectures(userId);
+        setLectures(data);
+        
+        // Transform API data to match calendar events format
+        const newEvents = {};
+        data.forEach(lecture => {
+          const day = new Date(lecture.date).getDate();
+          if (!newEvents[day]) newEvents[day] = [];
+          newEvents[day].push({
+            id: lecture.id,
+            title: `${lecture.course_code} - ${lecture.title}`,
+            status: lecture.status,
+            ...lecture
+          });
+        });
+        
+        // Update the lecture calendar events
+        setCalendars(prev => ({
+          ...prev,
+          lecture: {
+            ...prev.lecture,
+            events: newEvents
+          }
+        }));
+        
+      } catch (error) {
+        toast.error('Failed to load lectures');
+      } finally {
+        setLoading(false);
+      }
+    };
+    const handleLectureClick = (calendarKey, day, event) => {
+  if (calendarKey === 'lecture' && event) {
+    // Don't allow cancelling already cancelled lectures
+    if (event.status === 'cancelled') {
+      toast.error('This lecture is already cancelled');
+      return;
+    }
+    
+    // Check if lecture date is in the past
+    const lectureDate = new Date(event.date);
+    if (lectureDate < new Date()) {
+      toast.error('Cannot cancel past lectures');
+      return;
+    }
+    
+    setSelectedLecture(event);
+    setShowCancelModal(true);
+  }
+};
+
+const handleLectureCancelled = (updatedLecture) => {
+  // Refresh lectures after cancellation
+  fetchLectures();
+};
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
@@ -190,6 +273,27 @@ export default function MyCalendars() {
           </div>
         </div>
       )}
+
+          {/* Cancel Lecture Modal */}
+            <CancelLectureModal
+                isOpen={showCancelModal}
+                onClose={() => {
+                  setShowCancelModal(false);
+                  setSelectedLecture(null);
+                }}
+                lecture={selectedLecture}
+                onCancelled={handleLectureCancelled}
+            />
+
+      {/* Loading indicator */}
+          {loading && (
+              <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+                <div className="bg-white p-4 rounded-lg shadow-lg">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-600">Loading lectures...</p>
+                </div>
+              </div>
+          )}
     </div>
   );
 }
