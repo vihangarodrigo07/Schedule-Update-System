@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { PlusCircle, CheckCircle } from 'lucide-react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const CreateLecture = () => {
+    const navigate = useNavigate();
     // Form state wired to match your backend Lecture model
     const [formData, setFormData] = useState({
         name: '',
@@ -16,6 +19,31 @@ const CreateLecture = () => {
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    // The function that sends data to your SQLite database via the .NET API
+    const handleSubmit = async (e) => {
+        e.preventDefault(); // Prevents default form submission behavior
+
+        try {
+            // Convert string IDs from the select dropdowns to integers for the C# backend
+            const payload = {
+                ...formData,
+                batchId: formData.batchId ? parseInt(formData.batchId) : 0,
+                hallId: formData.hallId ? parseInt(formData.hallId) : 0
+            };
+
+            // Replace with your actual Visual Studio Port
+            const API_URL = "https://localhost:7057/api/Lectures"; 
+
+            await axios.post(API_URL, payload);
+            
+            // If successful, navigate back to the lectures list where it will fetch the new data
+            navigate('/lectures');
+        } catch (error) {
+            console.error("Error saving lecture:", error);
+            alert("Failed to save the lecture. Check the console for details.");
+        }
     };
 
     return (
@@ -156,12 +184,18 @@ const CreateLecture = () => {
 
             {/* Footer Actions */}
             <div style={styles.footer}>
-                <button style={styles.cancelBtn}>Cancel</button>
+				<button 
+                    style={styles.cancelBtn} 
+                    onClick={() => navigate('/lectures')} // Navigates back without saving
+                >
+                    Cancel
+                </button>
                 <div style={styles.actionButtons}>
-                    <button style={styles.primaryBtn}>
+                    <button style={styles.primaryBtn} onClick={handleSubmit}>
                         <CheckCircle size={16} /> Sent for Approvals
                     </button>
-                    <button style={styles.primaryBtn}>
+                    {/* Both buttons trigger the same submit function for now */}
+                    <button style={styles.primaryBtn} onClick={handleSubmit}>
                         <CheckCircle size={16} /> Add
                     </button>
                 </div>
@@ -169,6 +203,7 @@ const CreateLecture = () => {
         </div>
     );
 };
+
 
 const styles = {
     container: {
@@ -303,7 +338,7 @@ const styles = {
         fontSize: '14px',
         fontWeight: '500',
         display: 'flex',
-        alignItems: 'center', 
+        alignItems: 'center',
         gap: '8px',
         cursor: 'pointer'
     }

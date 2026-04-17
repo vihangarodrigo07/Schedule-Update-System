@@ -88,7 +88,11 @@ const Lectures = () => {
                                     </span>
                                 </td>
                                 <td style={styles.td}>
-                                    <button style={styles.viewLink}>
+
+                                    <button 
+                                        style={styles.viewLink} 
+                                        onClick={() => navigate(`/lectures/${lecture.id}`)}
+                                    >
                                         View <ChevronRight size={16} />
                                     </button>
                                 </td>
