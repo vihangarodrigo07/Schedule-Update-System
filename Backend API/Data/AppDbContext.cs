@@ -10,5 +10,6 @@ namespace Backend_API.Data
         public DbSet<Lecture> Lectures { get; set; }
         public DbSet<Batch> Batches { get; set; }
         public DbSet<Hall> Halls { get; set; }
+        public DbSet<User> Users { get; set; }
     }
 }
