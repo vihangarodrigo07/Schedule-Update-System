@@ -25,14 +25,17 @@ namespace Backend_API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Lecture>>> GetLectures()
         {
-            return await _context.Lectures.ToListAsync();
+            return await _context.Lectures.Include(l => l.Batch).Include(l => l.Hall).ToListAsync();
         }
 
         // GET: api/Lectures/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Lecture>> GetLecture(int id)
         {
-            var lecture = await _context.Lectures.FindAsync(id);
+            var lecture = await _context.Lectures
+                .Include(l => l.Batch)    
+                .Include(l => l.Hall)     
+                .FirstOrDefaultAsync(l => l.Id == id);
 
             if (lecture == null)
             {

@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { PlusCircle, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { PlusCircle, CheckCircle, X } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const CreateLecture = () => {
     const navigate = useNavigate();
+    
     // Form state wired to match your backend Lecture model
     const [formData, setFormData] = useState({
         name: '',
@@ -17,32 +18,76 @@ const CreateLecture = () => {
         endTime: ''
     });
 
+    // Dynamic Lists from Database
+    const [batches, setBatches] = useState([]);
+    const [halls, setHalls] = useState([]);
+
+    // Modal Visibility States
+    const [showBatchModal, setShowBatchModal] = useState(false);
+    const [showHallModal, setShowHallModal] = useState(false);
+
+    // Modal Form States
+    const [newBatch, setNewBatch] = useState({ name: '', program: '', students: '' });
+    const [newHall, setNewHall] = useState({ name: '', capacity: '', building: '' });
+
+    // Fetch Batches and Halls on component mount
+    useEffect(() => {
+        fetchDropdownData();
+    }, []);
+
+    const fetchDropdownData = async () => {
+        try {
+            const batchRes = await axios.get("http://localhost:5057/api/Batches");
+            const hallRes = await axios.get("http://localhost:5057/api/Halls");
+            setBatches(batchRes.data);
+            setHalls(hallRes.data);
+        } catch (error) {
+            console.error("Error fetching dropdown data:", error);
+        }
+    };
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // The function that sends data to your SQLite database via the .NET API
     const handleSubmit = async (e) => {
-        e.preventDefault(); // Prevents default form submission behavior
-
+        e.preventDefault();
         try {
-            // Convert string IDs from the select dropdowns to integers for the C# backend
             const payload = {
                 ...formData,
                 batchId: formData.batchId ? parseInt(formData.batchId) : 0,
                 hallId: formData.hallId ? parseInt(formData.hallId) : 0
             };
-
-            // Replace with your actual Visual Studio Port
-            const API_URL = "https://localhost:7057/api/Lectures"; 
-
-            await axios.post(API_URL, payload);
-            
-            // If successful, navigate back to the lectures list where it will fetch the new data
+            await axios.post("http://localhost:5057/api/Lectures", payload);
             navigate('/lectures');
         } catch (error) {
             console.error("Error saving lecture:", error);
             alert("Failed to save the lecture. Check the console for details.");
+        }
+    };
+
+    // --- Modal Submit Handlers ---
+    const handleRegisterBatch = async () => {
+        try {
+            // Sending only 'name' as per current Models.cs definition
+            await axios.post("http://localhost:5057/api/Batches", { name: newBatch.name });
+            setShowBatchModal(false);
+            setNewBatch({ name: '', program: '', students: '' }); // Reset
+            fetchDropdownData(); // Refresh the dropdown
+        } catch (error) {
+            console.error("Error adding batch:", error);
+        }
+    };
+
+    const handleRegisterHall = async () => {
+        try {
+             // Sending only 'name' as per current Models.cs definition
+            await axios.post("http://localhost:5057/api/Halls", { name: newHall.name });
+            setShowHallModal(false);
+            setNewHall({ name: '', capacity: '', building: '' }); // Reset
+            fetchDropdownData(); // Refresh the dropdown
+        } catch (error) {
+            console.error("Error adding hall:", error);
         }
     };
 
@@ -62,24 +107,20 @@ const CreateLecture = () => {
                         <div style={styles.fieldGroup}>
                             <label style={styles.label}>LECTURE NAME</label>
                             <input 
-                                type="text" 
-                                name="name"
+                                type="text" name="name"
                                 placeholder="e.g. Advanced Web Technologies" 
                                 style={styles.input} 
-                                value={formData.name}
-                                onChange={handleChange}
+                                value={formData.name} onChange={handleChange}
                             />
                         </div>
 
                         <div style={styles.fieldGroup}>
                             <label style={styles.label}>LECTURE DESCRIPTION</label>
                             <input 
-                                type="text" 
-                                name="description"
+                                type="text" name="description"
                                 placeholder="Lecture Description" 
                                 style={styles.input} 
-                                value={formData.description}
-                                onChange={handleChange}
+                                value={formData.description} onChange={handleChange}
                             />
                             <span style={styles.helperText}>Use formal university course nomenclature.</span>
                         </div>
@@ -89,12 +130,12 @@ const CreateLecture = () => {
                             <select 
                                 name="lecturerName" 
                                 style={{...styles.input, ...styles.select}}
-                                value={formData.lecturerName}
-                                onChange={handleChange}
+                                value={formData.lecturerName} onChange={handleChange}
                             >
                                 <option value="" disabled>Select Lecturer</option>
                                 <option value="Dr. Alistair Thorne">Dr. Alistair Thorne</option>
                                 <option value="Dr. Elena Ross">Dr. Elena Ross</option>
+                                <option value="Prof. Sarah Jenkins">Prof. Sarah Jenkins</option>
                             </select>
                         </div>
 
@@ -104,13 +145,14 @@ const CreateLecture = () => {
                                 <select 
                                     name="batchId" 
                                     style={{...styles.input, ...styles.select, flex: 1}}
-                                    value={formData.batchId}
-                                    onChange={handleChange}
+                                    value={formData.batchId} onChange={handleChange}
                                 >
                                     <option value="" disabled>Select Student Batch</option>
-                                    <option value="1">CS-402 • Undergraduate</option>
+                                    {batches.map(b => (
+                                        <option key={b.id} value={b.id}>{b.name}</option>
+                                    ))}
                                 </select>
-                                <button type="button" style={styles.customBtn}>
+                                <button type="button" style={styles.customBtn} onClick={() => setShowBatchModal(true)}>
                                     <PlusCircle size={16} />
                                     <span>CUSTOM</span>
                                 </button>
@@ -131,31 +173,25 @@ const CreateLecture = () => {
                             <div style={styles.fieldGroup}>
                                 <label style={styles.label}>DATE</label>
                                 <input 
-                                    type="date" 
-                                    name="date"
+                                    type="date" name="date"
                                     style={{...styles.input, color: formData.date ? '#002855' : '#64748B'}} 
-                                    value={formData.date}
-                                    onChange={handleChange}
+                                    value={formData.date} onChange={handleChange}
                                 />
                             </div>
                             <div style={styles.fieldGroup}>
                                 <label style={styles.label}>START TIME</label>
                                 <input 
-                                    type="time" 
-                                    name="startTime"
+                                    type="time" name="startTime"
                                     style={{...styles.input, color: formData.startTime ? '#002855' : '#64748B'}} 
-                                    value={formData.startTime}
-                                    onChange={handleChange}
+                                    value={formData.startTime} onChange={handleChange}
                                 />
                             </div>
                             <div style={styles.fieldGroup}>
                                 <label style={styles.label}>END TIME</label>
                                 <input 
-                                    type="time" 
-                                    name="endTime"
+                                    type="time" name="endTime"
                                     style={{...styles.input, color: formData.endTime ? '#002855' : '#64748B'}} 
-                                    value={formData.endTime}
-                                    onChange={handleChange}
+                                    value={formData.endTime} onChange={handleChange}
                                 />
                             </div>
                         </div>
@@ -166,13 +202,14 @@ const CreateLecture = () => {
                                 <select 
                                     name="hallId" 
                                     style={{...styles.input, ...styles.select, flex: 1}}
-                                    value={formData.hallId}
-                                    onChange={handleChange}
+                                    value={formData.hallId} onChange={handleChange}
                                 >
                                     <option value="" disabled>Select Lecture Hall</option>
-                                    <option value="1">Hall B2</option>
+                                    {halls.map(h => (
+                                        <option key={h.id} value={h.id}>{h.name}</option>
+                                    ))}
                                 </select>
-                                <button type="button" style={styles.customBtn}>
+                                <button type="button" style={styles.customBtn} onClick={() => setShowHallModal(true)}>
                                     <PlusCircle size={16} />
                                     <span>CUSTOM</span>
                                 </button>
@@ -184,22 +221,111 @@ const CreateLecture = () => {
 
             {/* Footer Actions */}
             <div style={styles.footer}>
-				<button 
-                    style={styles.cancelBtn} 
-                    onClick={() => navigate('/lectures')} // Navigates back without saving
-                >
+                <button style={styles.cancelBtn} onClick={() => navigate('/lectures')}>
                     Cancel
                 </button>
                 <div style={styles.actionButtons}>
                     <button style={styles.primaryBtn} onClick={handleSubmit}>
                         <CheckCircle size={16} /> Sent for Approvals
                     </button>
-                    {/* Both buttons trigger the same submit function for now */}
                     <button style={styles.primaryBtn} onClick={handleSubmit}>
                         <CheckCircle size={16} /> Add
                     </button>
                 </div>
             </div>
+
+            {/* --- ADD NEW BATCH MODAL --- */}
+            {showBatchModal && (
+                <div style={styles.modalOverlay}>
+                    <div style={styles.batchModalCard}>
+                        <div style={styles.batchModalHeader}>
+                            <h2 style={styles.batchModalTitle}>Add New Batch</h2>
+                            <button style={styles.iconBtn} onClick={() => setShowBatchModal(false)}><X size={24} color="#002855" /></button>
+                        </div>
+                        
+                        <div style={styles.modalBody}>
+                            <div style={styles.fieldGroup}>
+                                <label style={styles.label}>BATCH NAME</label>
+                                <input 
+                                    type="text" placeholder="e.g. B.Tech Computer Science 2024" style={styles.input}
+                                    value={newBatch.name} onChange={(e) => setNewBatch({...newBatch, name: e.target.value})}
+                                />
+                                <span style={styles.helperText}>Use the standard naming convention for archival records.</span>
+                            </div>
+                            
+                            <div style={styles.modalTwoCol}>
+                                <div style={styles.fieldGroup}>
+                                    <label style={styles.label}>ACADEMIC PROGRAM</label>
+                                    <select 
+                                        style={{...styles.input, ...styles.select}}
+                                        value={newBatch.program} onChange={(e) => setNewBatch({...newBatch, program: e.target.value})}
+                                    >
+                                        <option value="" disabled>Select Program</option>
+                                        <option value="B.Tech">B.Tech</option>
+                                        <option value="B.Sc">B.Sc</option>
+                                    </select>
+                                </div>
+                                <div style={styles.fieldGroup}>
+                                    <label style={styles.label}>TOTAL STUDENTS</label>
+                                    <input 
+                                        type="number" placeholder="00" style={styles.input}
+                                        value={newBatch.students} onChange={(e) => setNewBatch({...newBatch, students: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={styles.batchModalFooter}>
+                            <button style={styles.modalCancelText} onClick={() => setShowBatchModal(false)}>Cancel</button>
+                            <button style={styles.modalRegisterDarkBtn} onClick={handleRegisterBatch}>Register Batch</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* --- ADD NEW HALL MODAL --- */}
+            {showHallModal && (
+                <div style={styles.modalOverlay}>
+                    <div style={styles.hallModalCard}>
+                        <div style={styles.hallModalHeader}>
+                            <h2 style={styles.hallModalTitle}>Add New Hall</h2>
+                            <button style={styles.iconBtn} onClick={() => setShowHallModal(false)}><X size={24} color="white" /></button>
+                        </div>
+                        
+                        <div style={styles.modalBody}>
+                            <div style={styles.fieldGroup}>
+                                <label style={styles.label}>HALL NAME</label>
+                                <input 
+                                    type="text" placeholder="e.g. Einstein Seminar Room" style={styles.inputWhite}
+                                    value={newHall.name} onChange={(e) => setNewHall({...newHall, name: e.target.value})}
+                                />
+                            </div>
+                            
+                            <div style={styles.modalTwoCol}>
+                                <div style={styles.fieldGroup}>
+                                    <label style={styles.label}>CAPACITY (SEATS)</label>
+                                    <input 
+                                        type="number" placeholder="45" style={styles.inputWhite}
+                                        value={newHall.capacity} onChange={(e) => setNewHall({...newHall, capacity: e.target.value})}
+                                    />
+                                </div>
+                                <div style={styles.fieldGroup}>
+                                    <label style={styles.label}>BUILDING/CAMPUS</label>
+                                    <input 
+                                        type="text" placeholder="West Wing" style={styles.inputWhite}
+                                        value={newHall.building} onChange={(e) => setNewHall({...newHall, building: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={styles.hallModalFooter}>
+                            <button style={styles.modalRegisterDarkBtn} onClick={handleRegisterHall}>Register Hall</button>
+                            <button style={styles.modalCancelGrayBtn} onClick={() => setShowHallModal(false)}>Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -257,7 +383,7 @@ const styles = {
     },
     label: {
         fontSize: '12px',
-        fontWeight: '600',
+        fontWeight: '700',
         color: '#475569',
         letterSpacing: '0.5px',
         textTransform: 'uppercase'
@@ -268,7 +394,18 @@ const styles = {
         borderRadius: '6px',
         padding: '14px 16px',
         fontSize: '15px',
-        color: '#002855',
+        color: '#0F172A',
+        outline: 'none',
+        width: '100%',
+        boxSizing: 'border-box'
+    },
+    inputWhite: { // Used in Hall Modal
+        backgroundColor: '#F8FAFC',
+        border: 'none',
+        borderRadius: '6px',
+        padding: '14px 16px',
+        fontSize: '15px',
+        color: '#0F172A',
         outline: 'none',
         width: '100%',
         boxSizing: 'border-box'
@@ -340,6 +477,122 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
+        cursor: 'pointer'
+    },
+    
+    // --- MODAL STYLES ---
+    modalOverlay: {
+        position: 'fixed',
+        top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000
+    },
+    iconBtn: {
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        display: 'flex',
+        padding: 0
+    },
+    modalBody: {
+        padding: '32px 40px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '24px'
+    },
+    modalTwoCol: {
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '24px'
+    },
+    modalRegisterDarkBtn: {
+        backgroundColor: '#002855',
+        color: 'white',
+        border: 'none',
+        padding: '12px 32px',
+        borderRadius: '6px',
+        fontWeight: '600',
+        fontSize: '15px',
+        cursor: 'pointer'
+    },
+
+    // Specific Batch Modal Styles
+    batchModalCard: {
+        backgroundColor: 'white',
+        borderRadius: '12px',
+        width: '500px',
+        overflow: 'hidden',
+        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+    },
+    batchModalHeader: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '32px 40px 0 40px'
+    },
+    batchModalTitle: {
+        margin: 0,
+        fontSize: '28px',
+        fontWeight: '800',
+        color: '#002855'
+    },
+    batchModalFooter: {
+        backgroundColor: '#F1F5F9',
+        padding: '24px 40px',
+        display: 'flex',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        gap: '24px'
+    },
+    modalCancelText: {
+        background: 'none',
+        border: 'none',
+        color: '#475569',
+        fontSize: '15px',
+        fontWeight: '600',
+        cursor: 'pointer'
+    },
+
+    // Specific Hall Modal Styles
+    hallModalCard: {
+        backgroundColor: 'white',
+        borderRadius: '12px',
+        width: '500px',
+        overflow: 'hidden',
+        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+    },
+    hallModalHeader: {
+        backgroundColor: '#002855',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '24px 40px'
+    },
+    hallModalTitle: {
+        margin: 0,
+        fontSize: '20px',
+        fontWeight: '600',
+        color: 'white'
+    },
+    hallModalFooter: {
+        backgroundColor: 'white',
+        padding: '24px 40px',
+        display: 'flex',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        gap: '16px'
+    },
+    modalCancelGrayBtn: {
+        backgroundColor: '#E2E8F0',
+        color: '#475569',
+        border: 'none',
+        padding: '12px 32px',
+        borderRadius: '6px',
+        fontWeight: '600',
+        fontSize: '15px',
         cursor: 'pointer'
     }
 };

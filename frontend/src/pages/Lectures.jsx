@@ -9,7 +9,7 @@ const Lectures = () => {
     const [loading, setLoading] = useState(true);
 
     // Replace with your actual Visual Studio Port
-    const API_URL = "https://localhost:7057/api/Lectures"; 
+    const API_URL = "http://localhost:5057/api/Lectures"; 
 
     useEffect(() => {
         fetchLectures();
@@ -45,7 +45,7 @@ const Lectures = () => {
                 </div>
 
                 <div style={styles.buttonGroup}>
-                    <button style={styles.secondaryBtn}>
+                    <button style={styles.secondaryBtn} onClick={() => navigate('/calendar')}>
                         <Calendar size={16} /> View Calendar
                     </button>
 
