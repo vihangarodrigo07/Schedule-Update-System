@@ -11,3 +11,5 @@
 ```bash
 cd backend
 uvicorn main:app --reload
+
+dotnet run
