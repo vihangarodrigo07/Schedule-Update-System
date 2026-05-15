@@ -127,11 +127,11 @@ const Lectures = () => {
     );
 };
 
-// Logic for Status Colors (Updated to match Figma plain text styling)
+
 const getStatusStyle = (status) => ({
     fontWeight: '700',
     fontSize: '14px',
-    color: status === 'Scheduled' ? '#1E293B' : '#9A3412', // Dark for Scheduled, Brown/Orange for Pending
+    color: status === 'Scheduled' ? '#1E293B' : '#9A3412', 
 });
 
 const styles = {
